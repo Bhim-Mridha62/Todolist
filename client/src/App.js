@@ -1,78 +1,117 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css'
-import Head from './components/Head';
-import DataAdder from './components/DataAdder';
-import ShowData from './components/ShowData';
 import axios from 'axios';
 
 const App = () => {
-  const [item, setItem] = useState({ data: '' });
-  const [addData, setAddData] = useState([]);
-  const [holderText, setHolderText] = useState("Add Item");
-  const [deleted, setDeleted] = useState(false);
+  const [tasks, setTasks] = useState([]);
+  const [newTask, setNewTask] = useState('');
 
   useEffect(() => {
-    axios.get(`http://localhost:8000`)
-      .then((res) => {
-        console.log(res, "res");
-        if (Array.isArray(res.data)) {
-          setAddData(res.data);
-          setDeleted(false);
-        } else {
-          console.log('Invalid data format:', res.data);
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+    fetchTasks();
+  }, []);
 
-  }, [item, deleted]);
-
-
-  const addItem = () => {
-    if (item.data !== "") {
-      axios
-        .post(`http://localhost:8000`, item)
-        .then((res) => {
-          setItem({ data: '' });
-          setHolderText("Add Item");
-          console.log(res.data.message);
-        })
-        .catch((err) => {
-          console.log("Error couldn't add Item");
-          console.error(err.message);
-        });
-    } else {
-      setHolderText("Can't Empty");
+  const fetchTasks = async () => {
+    try {
+      const response = await axios.get('/tasks');
+      setTasks(response.data);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
     }
-  }
+  };
 
-  const deleteItem = (id) => {
-    axios.delete(`http://localhost:8000/${id}`);
-    setDeleted(true);
-  }
+  const handleInputChange = (event) => {
+    setNewTask(event.target.value);
+  };
+
+  const handleAddTask = async (event) => {
+    event.preventDefault();
+    if (newTask.trim() !== '') {
+      try {
+        await axios.post('/tasks', { text: newTask });
+        setNewTask('');
+        fetchTasks(); 
+      } catch (error) {
+        console.error('Error adding task:', error);
+      }
+    }
+  };
+
+  const handleEditTask = async (taskId, newText) => {
+    try {
+      await axios.put(`/tasks/${taskId}`, { text: newText });
+      fetchTasks(); 
+    } catch (error) {
+      console.error('Error editing task:', error);
+    }
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    try {
+      await axios.delete(`/tasks/${taskId}`);
+      fetchTasks(); 
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    }
+  };
 
   return (
-    <>
-      <div className="container">
-        <div className="center_container">
-          <Head />
-          <div className="body">
-            <DataAdder item={item} setItem={setItem} click={addItem} placeholderText={holderText} />
-            <ol className="lists">
-              {
-                addData.length > 0 &&
-                addData.map((item) => {
-                  return <ShowData key={item._id} item={item} onSelect={deleteItem} />
-                })
-              }
-
-            </ol>
+    <div className="App">
+      <header>
+        <h1>
+          <span>Bhim </span> Todo list
+        </h1>
+        <form id="new-task-form" onSubmit={handleAddTask}>
+          <input
+            type="text"
+            name="new-task-input"
+            id="new-task-input"
+            placeholder="What do you have planned?"
+            value={newTask}
+            onChange={handleInputChange}
+          />
+          <input type="submit" id="new-task-submit" value="Add task" />
+        </form>
+      </header>
+      <main>
+        <section className="task-list">
+          <h2>Tasks</h2>
+          <div id="tasks">
+            {tasks.map((task) => (
+              <div className="task" key={task._id}>
+                <div className="content">
+                  <input
+                    type="text"
+                    className="text"
+                    value={task.text}
+                    readOnly
+                  />
+                </div>
+                <div className="actions">
+                  <button
+                    className="edit"
+                    onClick={() => {
+                      const newText = prompt('Edit the task:', task.text);
+                      if (newText !== null) {
+                        handleEditTask(task._id, newText);
+                      }
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="delete"
+                    onClick={() => handleDeleteTask(task._id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
-      </div>
-    </>
+        </section>
+      </main>
+    </div>
   );
-}
+};
 
 export default App;
