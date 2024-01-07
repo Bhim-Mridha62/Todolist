@@ -12,7 +12,7 @@ const App = () => {
 
   const fetchTasks = async () => {
     try {
-      const response = await axios.get('/tasks');
+      const response = await axios.get('http://localhost:5000/tasks');
       setTasks(response.data);
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -27,7 +27,7 @@ const App = () => {
     event.preventDefault();
     if (newTask.trim() !== '') {
       try {
-        await axios.post('/tasks', { text: newTask });
+        await axios.post('http://localhost:5000/tasks', { text: newTask });
         setNewTask('');
         fetchTasks(); 
       } catch (error) {
@@ -38,7 +38,7 @@ const App = () => {
 
   const handleEditTask = async (taskId, newText) => {
     try {
-      await axios.put(`/tasks/${taskId}`, { text: newText });
+      await axios.put(`http://localhost:5000/tasks/${taskId}`, { text: newText });
       fetchTasks(); 
     } catch (error) {
       console.error('Error editing task:', error);
@@ -47,7 +47,7 @@ const App = () => {
 
   const handleDeleteTask = async (taskId) => {
     try {
-      await axios.delete(`/tasks/${taskId}`);
+      await axios.delete(`http://localhost:5000/tasks/${taskId}`);
       fetchTasks(); 
     } catch (error) {
       console.error('Error deleting task:', error);
